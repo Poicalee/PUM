@@ -9,4 +9,16 @@
     <string name="second_fragment_label">xD</string>
     <string name="first_fragment_label">xD</string>
     <string name="enter_app">Wejdź</string>
+    <string name="view_appointments">Zobacz Spotkania</string>
+    <string name="third_fragment_label">XXDD</string>
+    <string name="dodaj_spotkanie">Dodaj spotkanie</string>
+    <string name="wybierz_kontakt">Wybierz kontakt</string>
+    <string name="appointment_time">Appointment Time</string>
+    <string name="contact">Contact</string>
+    <string name="appointment_title">Appointment Title</string>
+    <string name="appointment_date">Appointment Date</string>
+    <string name="delete_appointment">delete_appointemnt\n</string>
+    <string name="edit_appointment">edit_appointment\n</string>
+    <string name="edytuj_spotkanie">edytuj\n</string>
+    <string name="usuń_spotkanie">usuń spotkanie</string>
 </resources>
