@@ -15,9 +15,9 @@ class AppointmentRepository(private val appointmentDao: AppointmentDao) {
 //    }
 
     // Funkcja do dodawania spotkania
-//    suspend fun addAppointment(appointment: Appointment) {
-//        appointmentDao.insert(appointment)
-//    }
+    suspend fun addAppointment(appointment: Appointment) {
+        appointmentDao.insert(appointment)
+    }
 
     // Funkcja do usuwania spotkania
     suspend fun delete(appointment: Appointment) {

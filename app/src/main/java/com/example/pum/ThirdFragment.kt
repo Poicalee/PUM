@@ -8,6 +8,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.provider.ContactsContract
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -244,6 +245,8 @@ class ThirdFragment : Fragment() {
 
                 if (title.isNotBlank() && date.isNotBlank() && time.isNotBlank() && contact.isNotBlank()) {
                     val updatedAppointment = Appointment(id = appointment.id, title = title, date = date, time = time, contact = contact)
+                    // Add a log to verify the values
+                    Log.d("AppointmentEdit", "Updated Appointment: $updatedAppointment")
                     appointmentViewModel.updateAppointment(updatedAppointment)
                     Toast.makeText(requireContext(), "Spotkanie zaktualizowane", Toast.LENGTH_SHORT).show()
                 } else {

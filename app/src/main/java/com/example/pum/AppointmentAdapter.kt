@@ -23,7 +23,7 @@ class AppointmentAdapter(
     private var appointments: MutableList<Appointment>,
     private val onDeleteClick: (Appointment) -> Unit,
     private val onEditClick: (Appointment) -> Unit,
-//    private val onHistoryAdd: (Appointment) -> Unit
+    private val onHistoryAdd: (Appointment) -> Unit
 ) : RecyclerView.Adapter<AppointmentAdapter.AppointmentViewHolder>() {
 
     init {
@@ -155,6 +155,8 @@ class AppointmentAdapter(
         holder.editButton.setOnClickListener {
             onEditClick(appointment)
             updateAppointment(appointment, holder.itemView.context)
+
+            // Send SMS after update
             if (appointment.contact!!.isNotEmpty()) {
                 sendSMS(appointment.contact.toString(), appointment, holder.itemView.context, isUpdate = true)
             } else {
