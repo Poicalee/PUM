@@ -10,9 +10,9 @@ class AppointmentRepository(private val appointmentDao: AppointmentDao) {
     }
 
     // Funkcja do pobierania spotkań po dacie
-//    fun getAppointmentsByDate(date: String): LiveData<List<Appointment>> {
-//        return appointmentDao.getAppointmentsByDate(date)
-//    }
+    fun getAppointmentsByDate(date: String): LiveData<List<Appointment>> {
+        return appointmentDao.getAppointmentsByDate(date)
+    }
 
     // Funkcja do dodawania spotkania
     suspend fun addAppointment(appointment: Appointment) {

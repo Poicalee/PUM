@@ -1,7 +1,10 @@
+
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.ksp)
+    alias(libs.plugins.androidx.navigation.safe.args)
 // Użycie KSP zamiast KAPT
 }
 
@@ -26,7 +29,10 @@ android {
             }
         }
     }
-
+    buildFeatures {
+        viewBinding = true
+        dataBinding = true
+    }
     buildTypes {
         release {
             isMinifyEnabled = false

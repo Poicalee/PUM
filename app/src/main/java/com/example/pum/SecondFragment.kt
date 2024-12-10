@@ -1,23 +1,25 @@
 package com.example.pum
 
-import android.app.Activity
-import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
 import com.example.pum.databinding.FragmentSecondBinding
 
+@Suppress("DEPRECATION")
 class SecondFragment : Fragment() {
 
     private var _binding: FragmentSecondBinding? = null
     private val binding get() = _binding!!
 
     private val appointmentViewModel: AppointmentViewModel by activityViewModels()
+
+    // Variable to store the selected date
+    private var selectedDate: String? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -30,37 +32,38 @@ class SecondFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Nasłuchiwanie na zmiany spotkań
-        appointmentViewModel.allAppointments.observe(viewLifecycleOwner, Observer { appointments ->
-            // Tu możesz zaktualizować widok z listą spotkań
-            // np. dodanie spotkań do RecyclerView
-        })
+        // Set up the CalendarView listener to store the selected date
+        binding.calendarView.setOnDateChangeListener { _, year, month, dayOfMonth ->
+            // Format the selected date
+            selectedDate = String.format("%04d-%02d-%02d", year, month + 1, dayOfMonth)
 
+        }
+
+        // Navigate to the first fragment when the button is clicked
         binding.buttonSecond.setOnClickListener {
             findNavController().navigate(R.id.action_SecondFragment_to_FirstFragment)
         }
 
-
-
+        // Navigate to the third fragment for viewing appointments
         binding.viewAppointmentsButton.setOnClickListener {
             findNavController().navigate(R.id.action_SecondFragment_to_ThirdFragment)
+        }
+
+        // Use the "View Appointments for the Day" button to navigate with the selected date
+        binding.viewAppointmentsForDayButton.setOnClickListener {
+            // Ensure that a date has been selected
+            selectedDate?.let { date ->
+                val action = SecondFragmentDirections.actionSecondFragmentToViewDayFragment(date)
+                findNavController().navigate(action)
+            } ?: run {
+                // Show a toast if no date is selected
+                Toast.makeText(requireContext(), "Please select a date", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
-    }
-
-    companion object {
-        private const val CONTACT_PICKER_REQUEST_CODE = 1
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == CONTACT_PICKER_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
-            val contactUri = data?.data
-            // Możesz przetwarzać dane kontaktu
-        }
     }
 }

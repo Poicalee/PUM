@@ -9,7 +9,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.CalendarContract
 import android.provider.ContactsContract
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -21,87 +20,97 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.pum.databinding.FragmentThirdBinding
+import com.example.pum.databinding.FragmentViewDayBinding
 import java.util.Calendar
 
-class ThirdFragment : Fragment() {
+class ViewDayFragment : Fragment() {
 
     private lateinit var contactInput: EditText
+    private var _binding: FragmentViewDayBinding? = null
+    private val binding get() = _binding!!
+
     private lateinit var appointmentAdapter: AppointmentAdapter
     private val appointmentViewModel: AppointmentViewModel by activityViewModels()
 
-    // Zainicjalizowanie ActivityResultLauncher
-    private val pickContactLauncher =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == Activity.RESULT_OK) {
-                val data: Intent? = result.data
-                val contactUri: Uri? = data?.data
-                val cursor = contactUri?.let {
-                    requireContext().contentResolver.query(
-                        it,
-                        null,
-                        null,
-                        null,
-                        null
-                    )
-                }
+    private val pickContactLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val data: Intent? = result.data
+            val contactUri: Uri? = data?.data
+            val cursor = contactUri?.let { requireContext().contentResolver.query(it, null, null, null, null) }
 
-                cursor?.apply {
-                    if (moveToFirst()) {
-                        val nameIndex = getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME)
-                        val contactName = getString(nameIndex)
+            cursor?.apply {
+                if (moveToFirst()) {
+                    val nameIndex = getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME)
+                    val contactName = getString(nameIndex)
 
-                        contactInput.setText(contactName) // Ustawienie wybranego kontaktu
-                    }
-                    close()
+                    contactInput.setText(contactName) // Set the selected contact
                 }
+                close()
             }
         }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val binding = FragmentThirdBinding.inflate(inflater, container, false)
+        _binding = FragmentViewDayBinding.inflate(inflater, container, false)
+        return binding.root
+    }
 
-        val recyclerView = binding.appointmentsRecyclerView
-        recyclerView.layoutManager = LinearLayoutManager(context)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
-        appointmentViewModel.allAppointments.observe(viewLifecycleOwner) { appointments ->
-            // Pass the lambda functions for onDeleteClick, onEditClick, and onHistoryAdd
-            appointmentAdapter = AppointmentAdapter(
-                appointments.toMutableList(),
-                onDeleteClick = { appointment ->
-                    // Handle the delete action here
-                    appointmentViewModel.deleteAppointment(appointment)
-                },
-                onEditClick = { appointment ->
-                    // Handle the edit action here
-                    showEditAppointmentDialog(appointment)
-                },
-                onShareClick = { appointment ->
-                    // Handle the share action here
-                    shareAppointment(appointment)
-                },
-                onAddToCalendarClick = { appointment ->
-                    // Handle the add to calendar action
-                    addToCalendar(appointment)
-                }
+        // Get the selected date passed from Safe Args or the Bundle
+        val selectedDate = arguments?.getString("selectedDate") ?: return
 
-            )
-            recyclerView.adapter = appointmentAdapter
+        // Update the date text view to show the selected date
+        binding.textViewSelectedDate.text = "Appointments for $selectedDate"
+
+        // Set up the RecyclerView
+        appointmentAdapter = AppointmentAdapter(
+            appointments = mutableListOf(),
+            onDeleteClick = { appointment ->
+                // Handle the delete action here
+                appointmentViewModel.deleteAppointment(appointment)
+            },
+            onEditClick = { appointment ->
+                // Handle the edit action here
+                showEditAppointmentDialog(appointment)
+            },
+            onShareClick = { appointment ->
+                // Handle the share action here
+                shareAppointment(appointment)
+            },
+            onAddToCalendarClick = { appointment ->
+                // Handle the add to calendar action
+                addToCalendar(appointment)
+            }
+        )
+
+        binding.recyclerViewDayAppointments.apply {
+            layoutManager = LinearLayoutManager(requireContext())
+            adapter = appointmentAdapter
+        }
+
+        // Observe and filter the appointments based on the selected date
+        appointmentViewModel.filterAppointmentsByDate(selectedDate).observe(viewLifecycleOwner) { appointments ->
+            appointmentAdapter.updateAppointments(appointments)
+
+            // Show/hide the message when there are no appointments for the selected date
+            binding.textViewNoAppointments.visibility =
+                if (appointments.isEmpty()) View.VISIBLE else View.GONE
         }
 
         binding.addAppointmentButton.setOnClickListener {
-            showAddAppointmentDialog()  // Wywołanie metody do pokazania okna dodawania spotkania
+            showAddAppointmentDialog()  // Show the dialog to add a new appointment
         }
 
         binding.buttonSecond.setOnClickListener {
-            findNavController().navigate(R.id.action_ThirdFragment_to_SecondFragment)
+            findNavController().navigate(R.id.action_ViewDayFragment_to_SecondFragment)
         }
-
-        return binding.root
     }
+
     private fun shareAppointment(appointment: Appointment) {
         val message = """
             Appointment Details:
@@ -119,6 +128,7 @@ class ThirdFragment : Fragment() {
 
         startActivity(Intent.createChooser(sendIntent, "Share Appointment"))
     }
+
     private fun addToCalendar(appointment: Appointment) {
         val calendarIntent = Intent(Intent.ACTION_INSERT).apply {
             data = CalendarContract.Events.CONTENT_URI
@@ -131,6 +141,7 @@ class ThirdFragment : Fragment() {
 
         startActivity(calendarIntent)
     }
+
     private fun getAppointmentStartTime(appointment: Appointment): Long {
         // Parse the date and time strings into a Calendar object
         val calendar = Calendar.getInstance()
@@ -140,25 +151,6 @@ class ThirdFragment : Fragment() {
             timeParts[0].toInt(), timeParts[1].toInt())
         return calendar.timeInMillis
     }
-
-//    private fun addToHistory(appointment: Appointment) {
-//        // Create a HistoryAppointment entity
-//        val historyAppointment = HistoryAppointment(
-//            originalId = appointment.id,
-//            title = appointment.title,
-//            date = appointment.date,
-//            time = appointment.time,
-//            addedAt = System.currentTimeMillis()
-//        )
-//
-//        // Add to database through ViewModel
-//
-//
-//        // Optional: Show confirmation toast
-//        Toast.makeText(requireContext(), "Dodano do historii: ${appointment.title}", Toast.LENGTH_SHORT).show()
-//    }
-
-
 
     private fun showAddAppointmentDialog() {
         val dialogLayout = LinearLayout(requireContext()).apply {
@@ -180,11 +172,11 @@ class ThirdFragment : Fragment() {
             setOnClickListener { showTimePicker(this) }
         }
 
-        // Kontakt jako EditText, który jest nieedytowalny, ale kliknięcie na niego otwiera wybór kontaktu
+        // Contact as an EditText, which is non-editable, but clicking on it opens the contact picker
         contactInput = EditText(requireContext()).apply {
             hint = "Wybierz kontakt"
             isFocusable = false
-            setOnClickListener { pickContact() } // Uruchamia wybór kontaktu
+            setOnClickListener { pickContact() } // Launch the contact picker
         }
 
         dialogLayout.addView(titleInput)
@@ -215,45 +207,6 @@ class ThirdFragment : Fragment() {
         dialog.show()
     }
 
-    // Zmieniamy metodę, aby używać ActivityResultLauncher
-    private fun pickContact() {
-        val intent = Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI)
-        pickContactLauncher.launch(intent)
-    }
-
-    @SuppressLint("DefaultLocale")
-    private fun showDatePicker(editText: EditText) {
-        val calendar = Calendar.getInstance()
-        val datePickerDialog = DatePickerDialog(
-            requireContext(),
-            { _, year, month, dayOfMonth ->
-                val date = String.format("%04d-%02d-%02d", year, month + 1, dayOfMonth)
-                editText.setText(date)
-            },
-            calendar.get(Calendar.YEAR),
-            calendar.get(Calendar.MONTH),
-            calendar.get(Calendar.DAY_OF_MONTH)
-        )
-        datePickerDialog.show()
-    }
-
-    @SuppressLint("DefaultLocale")
-    private fun showTimePicker(editText: EditText) {
-        val calendar = Calendar.getInstance()
-        val timePickerDialog = TimePickerDialog(
-            requireContext(),
-            { _, hourOfDay, minute ->
-                val time = String.format("%02d:%02d", hourOfDay, minute)
-                editText.setText(time)
-            },
-            calendar.get(Calendar.HOUR_OF_DAY),
-            calendar.get(Calendar.MINUTE),
-            true
-        )
-        timePickerDialog.show()
-    }
-
-    // Funkcja do pokazania formularza edycji spotkania
     private fun showEditAppointmentDialog(appointment: Appointment) {
         val dialogLayout = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
@@ -300,8 +253,6 @@ class ThirdFragment : Fragment() {
 
                 if (title.isNotBlank() && date.isNotBlank() && time.isNotBlank() && contact.isNotBlank()) {
                     val updatedAppointment = Appointment(id = appointment.id, title = title, date = date, time = time, contact = contact)
-                    // Add a log to verify the values
-                    Log.d("AppointmentEdit", "Updated Appointment: $updatedAppointment")
                     appointmentViewModel.updateAppointment(updatedAppointment)
                     Toast.makeText(requireContext(), "Spotkanie zaktualizowane", Toast.LENGTH_SHORT).show()
                 } else {
@@ -313,4 +264,48 @@ class ThirdFragment : Fragment() {
 
         dialog.show()
     }
+
+    // Function to pick a contact
+    private fun pickContact() {
+        val intent = Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI)
+        pickContactLauncher.launch(intent)
+    }
+
+    @SuppressLint("DefaultLocale")
+    private fun showDatePicker(editText: EditText) {
+        val calendar = Calendar.getInstance()
+        val datePickerDialog = DatePickerDialog(
+            requireContext(),
+            { _, year, month, dayOfMonth ->
+                val date = String.format("%04d-%02d-%02d", year, month + 1, dayOfMonth)
+                editText.setText(date)
+            },
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH),
+            calendar.get(Calendar.DAY_OF_MONTH)
+        )
+        datePickerDialog.show()
+    }
+
+    @SuppressLint("DefaultLocale")
+    private fun showTimePicker(editText: EditText) {
+        val calendar = Calendar.getInstance()
+        val timePickerDialog = TimePickerDialog(
+            requireContext(),
+            { _, hourOfDay, minute ->
+                val time = String.format("%02d:%02d", hourOfDay, minute)
+                editText.setText(time)
+            },
+            calendar.get(Calendar.HOUR_OF_DAY),
+            calendar.get(Calendar.MINUTE),
+            true
+        )
+        timePickerDialog.show()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
 }
+

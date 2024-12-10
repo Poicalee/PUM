@@ -31,6 +31,9 @@
         <action
             android:id="@+id/action_SecondFragment_to_ThirdFragment"
             app:destination="@id/ThirdFragment" />
+        <action
+            android:id="@+id/action_SecondFragment_to_ViewDayFragment"
+            app:destination="@id/ViewDayFragment" />
 
     </fragment>
 
@@ -42,4 +45,19 @@
     <action
         android:id="@+id/action_ThirdFragment_to_SecondFragment"
         app:destination="@id/SecondFragment" />
+
+
+    <fragment
+        android:id="@+id/ViewDayFragment"
+        android:name="com.example.pum.ViewDayFragment"
+        android:label="@string/view_day_fragment_label"
+        tools:layout="@layout/fragment_view_day" >
+        <argument
+            android:name="selectedDate"
+            app:argType="string" />
+    </fragment>
+    <action
+        android:id="@+id/action_ViewDayFragment_to_SecondFragment"
+        app:destination="@id/SecondFragment" />
+
 </navigation>
